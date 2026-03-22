@@ -72,7 +72,16 @@ export function NewOrderPage({ apis, bundles, onCreateOrder, onNavigateToOrders 
     ]
   );
 
-  const plan = useMemo(() => createPatternPlan(config), [config, seed]);
+  // ✅ SAFE PLAN (prevents crash)
+  const plan = useMemo(() => {
+    try {
+      const result = createPatternPlan(config);
+      return result && result.runs ? result : { runs: [] };
+    } catch (e) {
+      console.error("Pattern error:", e);
+      return { runs: [] };
+    }
+  }, [config, seed]);
 
   function isValidUrl(value: string) {
     try {
@@ -134,26 +143,26 @@ export function NewOrderPage({ apis, bundles, onCreateOrder, onNavigateToOrders 
             return;
           }
 
-          const viewRuns = plan.runs.map((run) => ({
+          const viewRuns = (plan.runs || []).map((run) => ({
             time: run.at.toISOString(),
             quantity: Math.floor(run.views),
           }));
 
-          // ✅ FINAL FIXED LOGIC
+          // ✅ FINAL SAFE LOGIC
 
-          const likesRuns = plan.runs.map((run) => ({
+          const likesRuns = (plan.runs || []).map((run) => ({
             time: run.at.toISOString(),
-            quantity: run.likes >= 10 ? Math.floor(run.likes) : null,
+            quantity: run.likes >= 10 ? Math.floor(run.likes) : 0,
           }));
 
-          const sharesRuns = plan.runs.map((run) => ({
+          const sharesRuns = (plan.runs || []).map((run) => ({
             time: run.at.toISOString(),
-            quantity: run.shares >= 20 ? Math.floor(run.shares) : null,
+            quantity: run.shares >= 20 ? Math.floor(run.shares) : 0,
           }));
 
-          const savesRuns = plan.runs.map((run, index) => ({
+          const savesRuns = (plan.runs || []).map((run, index) => ({
             time: run.at.toISOString(),
-            quantity: index !== 0 && run.saves >= 10 ? Math.floor(run.saves) : null,
+            quantity: index !== 0 && run.saves >= 10 ? Math.floor(run.saves) : 0,
           }));
 
           try {
